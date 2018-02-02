@@ -661,6 +661,65 @@ class SketchModel():
 
             # Just generate one sample (currently only calling this at end of train epoch to save image)
             break
+    #
+    # def conditional_generation(self, epoch):
+    #     """
+    #     Generate sequence conditioned on output of encoder
+    #     """
+    #
+    #     self.encoder.train(False)
+    #     self.decoder.train(False)
+    #
+    #     data_loader = DataLoader(dataset, batch_size=1)
+    #
+    #     for i, (batch, lengths) in enumerate(data_loader):
+    #         batch, lengths = self.preprocess_batch_from_data_loader(batch, lengths)
+    #
+    #         # Encode
+    #         # should remove dropouts
+    #         z, _, _ = self.encoder(batch, 1)    # z: [1, 1, 128]
+    #
+    #         # Initialize state with start of sequence stroke-5 stroke
+    #         if use_cuda:
+    #             sos = Variable(torch.Tensor([0,0,1,0,0]).view(1,1,-1).cuda())
+    #         else:
+    #             sos = Variable(torch.Tensor([0,0,1,0,0]).view(1,1,-1))
+    #         s = sos
+    #
+    #         # Generate until end of sequence or maximum sequence length
+    #         seq_x = []      # delta-x
+    #         seq_y = []      # delta-y
+    #         seq_pen = []    # pen-down
+    #         hidden_cell = None
+    #         for i in range(Nmax):
+    #             input = torch.cat([s,z.unsqueeze(0)],2)  # [1,1,133]
+    #
+    #             # Decode
+    #             self.pi, self.mu_x, self.mu_y, self.sigma_x, self.sigma_y, \
+    #                 self.rho_xy, self.q, hidden, cell = \
+    #                     self.decoder(input, z, hidden_cell)
+    #             hidden_cell = (hidden, cell)
+    #
+    #             # Sample next state
+    #             s, dx, dy, pen_down, eos = self.sample_next_state()     # not quite stroke-5
+    #             seq_x.append(dx)
+    #             seq_y.append(dy)
+    #             seq_pen.append(pen_down)
+    #
+    #             # Done drawing
+    #             if eos:
+    #                 break
+    #
+    #         # Get in format to draw image
+    #         # Cumulative sum because seq_x and seq_y are deltas, so get x (or y) at each stroke
+    #         sample_x = np.cumsum(seq_x, 0)
+    #         sample_y = np.cumsum(seq_y, 0)
+    #         sample_pen = np.array(seq_pen)
+    #         sequence = np.stack([sample_x, sample_y, sample_pen]).T
+    #         make_image(sequence, epoch)
+    #
+    #         # Just generate one sample (currently only calling this at end of train epoch to save image)
+    #         break
 
     def sample_next_state(self):
         """
@@ -739,5 +798,17 @@ class SketchModel():
 
 if __name__=="__main__":
     model = SketchModel()
-    for epoch in range(100):
-        model.train(epoch)
+    # for epoch in range(100):
+    #     model.train(epoch)
+
+    dataset = SketchDataset(hp.data_location)
+
+    for i in range(0, 10):
+        seq = dataset.data[i]
+
+        print len(seq)
+        sample_x = np.cumsum(seq[:20,0], 0)
+        sample_y = np.cumsum(seq[:20,1], 0)
+        sample_pen = seq[:20,2]
+        sequence = np.stack([sample_x, sample_y, sample_pen]).T
+        make_image(sequence, 'a' + str(i))
